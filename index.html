@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Searge Replacer</title>
+<style>
+  body{background:#0f1320;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+  h1{font-size:40px;margin-bottom:12px;}
+  .drop{border:2px dashed #555;border-radius:12px;padding:40px;text-align:center;cursor:pointer;margin-bottom:12px}
+  .drop.drag{border-color:#4da3ff;background:#182040}
+  #status{margin-top:10px;font-size:13px;color:#aaa}
+  .bar-wrap{border:1px solid #555;border-radius:6px;margin-top:5px;overflow:hidden;height:10px;width:300px;}
+  .bar{height:100%;background:#4da3ff;width:0%;transition:.2s;}
+  .file-item{margin:8px 0;padding:8px;border:1px solid #555;border-radius:8px;background:#151821;display:flex;align-items:center;justify-content:space-between;}
+  .file-item button{background:#4da3ff;color:#0f1320;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>Searge Replacer</h1>
+<p> made by matanku <3</p>
+
+<div id="drop" class="drop">
+  <strong>Drop files here</strong><br>
+  <small>or click to upload</small>
+  <input id="fileInput" type="file" style="display:none" multiple>
+</div>
+<div id="status">Loading mappings...</div>
+<div id="fileList"></div>
+
+<script>
+let mapping = {};
+fetch("https://raw.githubusercontent.com/unsnipeable/mcp/refs/heads/main/map.csv").then(r=>r.text()).then(csv=>{
+  const lines = csv.trim().split(/\r?\n/);
+  const headers = lines.shift().split(",");
+  const idxS = headers.indexOf("searge");
+  const idxN = headers.indexOf("name");
+  for(const line of lines){
+    const cols = line.split(",");
+    const s = (cols[idxS]||"").trim();
+    const n = (cols[idxN]||"").trim();
+    if(s && n) mapping[s]=n;
+  }
+  document.getElementById("status").textContent = "Loaded mappings ("+Object.keys(mapping).length+" entries)";
+}).catch(e=>{
+  document.getElementById("status").textContent = "Failed to load mappings: "+e;
+});
+
+const drop = document.getElementById("drop");
+const fileInput = document.getElementById("fileInput");
+const fileList = document.getElementById("fileList");
+
+drop.addEventListener("click", ()=>fileInput.click());
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev, e=>{
+  e.preventDefault(); e.stopPropagation(); drop.classList.add("drag");
+}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev, e=>{
+  e.preventDefault(); e.stopPropagation(); drop.classList.remove("drag");
+}));
+drop.addEventListener("drop", e=>{
+  if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener("change", e=>{
+  if(e.target.files.length) handleFiles(e.target.files);
+});
+
+function escapeReg(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+
+function handleFiles(files){
+  Array.from(files).forEach(file=>{
+    const item = document.createElement("div");
+    item.className="file-item";
+    const span = document.createElement("span");
+    span.textContent=file.name;
+    const btn = document.createElement("button");
+    btn.textContent="Processing...";
+    btn.disabled=true;
+    item.appendChild(span);
+    item.appendChild(btn);
+    fileList.appendChild(item);
+
+    const reader = new FileReader();
+    reader.onload = e=>{
+      let text = e.target.result;
+      const entries = Object.entries(mapping);
+      entries.forEach(([s,n])=>{
+        const re = new RegExp("\\b"+escapeReg(s)+"\\b","g");
+        text = text.replace(re,n);
+      });
+      // enable download button
+      btn.textContent="Download";
+      btn.disabled=false;
+      btn.onclick = ()=>{
+        const blob = new Blob([text],{type:"text/plain"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = file.name.replace(/(\.[^.]*)?$/, "_replaced$1");
+        a.click();
+        URL.revokeObjectURL(a.href);
+      };
+    };
+    reader.readAsText(file);
+  });
+}
+</script>
+</body>
+</html>
