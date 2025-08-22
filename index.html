@@ -13,11 +13,14 @@
   .bar{height:100%;background:#4da3ff;width:0%;transition:.2s;}
   .file-item{margin:8px 0;padding:8px;border:1px solid #555;border-radius:8px;background:#151821;display:flex;align-items:center;justify-content:space-between;}
   .file-item button{background:#4da3ff;color:#0f1320;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;}
+  .code-container{display:flex; gap:10px; margin-top:20px;}
+  textarea{width:50%; height:300px; background:#151821; color:#eee; border:1px solid #555; border-radius:6px; padding:8px; font-family:monospace; font-size:14px;}
+  #output{background:#111820;}
 </style>
 </head>
 <body>
 <h1>Searge Replacer</h1>
-<p> made by matanku <3</p>
+<p>made by matanku <3</p>
 
 <div id="drop" class="drop">
   <strong>Drop files here</strong><br>
@@ -26,6 +29,12 @@
 </div>
 <div id="status">Loading mappings...</div>
 <div id="fileList"></div>
+
+<h2>Dynamic Replace (left -> right)</h2>
+<div class="code-container">
+  <textarea id="input" placeholder="Type or paste code here..."></textarea>
+  <textarea id="output" placeholder="Replaced output..." readonly></textarea>
+</div>
 
 <script>
 let mapping = {};
@@ -86,7 +95,6 @@ function handleFiles(files){
         const re = new RegExp("\\b"+escapeReg(s)+"\\b","g");
         text = text.replace(re,n);
       });
-      // enable download button
       btn.textContent="Download";
       btn.disabled=false;
       btn.onclick = ()=>{
@@ -101,6 +109,17 @@ function handleFiles(files){
     reader.readAsText(file);
   });
 }
+
+const inputArea = document.getElementById("input");
+const outputArea = document.getElementById("output");
+inputArea.addEventListener("input", ()=>{
+  let text = inputArea.value;
+  Object.entries(mapping).forEach(([s,n])=>{
+    const re = new RegExp("\\b"+escapeReg(s)+"\\b","g");
+    text = text.replace(re,n);
+  });
+  outputArea.value = text;
+});
 </script>
 </body>
 </html>
