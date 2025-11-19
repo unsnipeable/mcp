@@ -37,7 +37,7 @@
 
 <script>
 let mapping = {};
-fetch("https://gist.githubusercontent.com/leonardosnt/f908dcdc910a7801c05b57edf21b34fb/raw/be015412a94f7ee0185ae69a52764c355012f651/MCP_Methods").then(r=>r.text()).then(csv=>{
+fetch("https://raw.githubusercontent.com/unsnipeable/mcp/refs/heads/main/map.csv").then(r=>r.text()).then(csv=>{
   const lines = csv.trim().split(/\r?\n/);
   const headers = lines.shift().split(",");
   const idxS = headers.indexOf("searge");
